@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Specialized;
 using System.IO;
 using System.Net;
 using System.Text;
@@ -99,5 +100,22 @@ namespace Request0r
                 }
             }
         }        
+
+        /// <summary>
+        /// Posts a form to a uri
+        /// </summary>
+        /// <param name="uri">Target uri</param>
+        /// <param name="form">A collection for the form data</param>
+        /// <returns>this</returns>
+        public Request0r UploadValues(Uri uri, NameValueCollection form)
+        {
+            var client = new WebClient();
+            client.Headers.Add(HttpRequestHeader.UserAgent, UserAgent);
+            client.Headers.Add(HttpRequestHeader.Cookie, _cookieContainer.GetCookieHeader(new Uri(uri.Scheme + "://" + uri.Host)));
+            client.Headers.Add(HttpRequestHeader.ContentType, "application/x-www-form-urlencoded");
+            var responseData = client.UploadValues(uri, form);
+            LastResponseContent = Encoding.ASCII.GetString(responseData);
+            return this;
+        }
     }
 }
