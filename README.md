@@ -24,31 +24,6 @@ Examples
 	StringAssert.IsMatch(pattern, underTest.LastResponseContent);
 ```
 
-**Adds a new site**
-
-```
-	var email      = "address@email.com";
-	var password   = "password";	
-	var postData = string.Format("username={0}&userpass={1}", email, password);
-	var title = Guid.NewGuid().ToString();                
-	var loginUri = new Uri("http://www.juicyads.com/login2.php");
-	var addUri = new Uri("http://www.juicyads.com/admin-addwebsite.php");
-	var form = new NameValueCollection();
-	form.Add("url", "http://" + title + ".com");
-	form.Add("title", title);
-	form.Add("desc", title);
-	form.Add("category", "tgppics");
-	form.Add("niche", "other");
-	form.Add("niche2", string.Empty);
-	form.Add("rating", "400");
-	form.Add("method", "step2");
-	form.Add("siteid", string.Empty);
-
-	var underTest = new Request0r().LogIn(loginUri, postData).UploadValues(addUri, form);
-
-	StringAssert.Contains(title, underTest.LastResponseContent);
-```
-
 Change Log
 ----------
 0.2.0 Form upload
