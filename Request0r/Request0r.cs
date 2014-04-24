@@ -20,16 +20,9 @@ namespace Request0r
         /// Opens a uri and stores the content in LastResponseContent
         /// </summary>
         /// <param name="uri">Page Uri</param>
-        /// <returns>this</returns>
-        public Request0r DownloadString(Uri uri) { return DownloadString(uri, false); }
-
-        /// <summary>
-        /// Opens a uri and stores the content in LastResponseContent
-        /// </summary>
-        /// <param name="uri">Page Uri</param>
         /// <param name="followRedirections">True if redirections should be followed</param>
         /// <returns>this</returns>
-        public Request0r DownloadString(Uri uri, bool followRedirections)
+        public Request0r DownloadString(Uri uri, bool followRedirections = true)
         {
             if (_cookieContainer == null) _cookieContainer = new CookieContainer();
 
