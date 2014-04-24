@@ -15,6 +15,7 @@ The following example downloads a users site list from the Juicy Ads website
 	var postData   = string.Format("username={0}&userpass={1}", email, password);
 	var loginUri   = new Uri("http://www.juicyads.com/login2.php");
 	var sellAdsUri = new Uri("http://www.juicyads.com/adminb.php");
+	
 	var result     = new Request0r().LogIn(loginUri, postData).DownloadString(sellAdsUri).LastResponseContent;
 ```
 
