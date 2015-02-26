@@ -6,11 +6,12 @@ using System.Text;
 
 namespace Request0r
 {
+// ReSharper disable once InconsistentNaming
     public class Request0r
     {
-        private CookieContainer _cookieContainer;
-        public  string          UserAgent           { get; set; }
-        public  string          LastResponseContent { get; private set; }
+        public CookieContainer CookieContainer;
+        public string UserAgent { get; set; }
+        public Response LastResponse { get; private set; }
 
         public Request0r()
         {
@@ -25,23 +26,26 @@ namespace Request0r
         /// <returns>this</returns>
         public Request0r DownloadString(Uri uri, bool followRedirections = true)
         {
-            if (_cookieContainer == null) _cookieContainer = new CookieContainer();
+            if (CookieContainer == null) CookieContainer = new CookieContainer();
 
             var request = (HttpWebRequest)WebRequest.Create(uri);
             request.UserAgent = UserAgent;
             request.Method = "GET";
-            request.CookieContainer = _cookieContainer;
+            request.CookieContainer = CookieContainer;
             request.AllowAutoRedirect = followRedirections;
 
             using (var response = (HttpWebResponse)request.GetResponse())
             {
                 if (response.Headers["Set-Cookie"] != null)
-                    _cookieContainer.SetCookies(new Uri(uri.Scheme + "://" + uri.Host), response.Headers["Set-Cookie"]);
+                    CookieContainer.SetCookies(new Uri(uri.Scheme + "://" + uri.Host), response.Headers["Set-Cookie"]);
 
+// ReSharper disable once AssignNullToNotNullAttribute
                 using (var stream = new StreamReader(response.GetResponseStream(), new UTF8Encoding()))
-                {
-                    LastResponseContent = stream.ReadToEnd();
-                }
+                    LastResponse = new Response
+                    {
+                        Content = stream.ReadToEnd(),
+                        StatusCode = response.StatusCode
+                    };
             }
 
             return this;
@@ -55,10 +59,10 @@ namespace Request0r
         /// <returns>The response content after rediractions</returns>
         public Request0r LogIn(Uri uri, string post)
         {
-            if (_cookieContainer == null) _cookieContainer = new CookieContainer();
+            if (CookieContainer == null) CookieContainer = new CookieContainer();
 
             var request = (HttpWebRequest)WebRequest.Create(uri);
-            request.CookieContainer = _cookieContainer;
+            request.CookieContainer = CookieContainer;
             request.UserAgent = UserAgent;
             request.Method = "POST";
             request.ContentType = "application/x-www-form-urlencoded";
@@ -75,27 +79,40 @@ namespace Request0r
             using (var response = (HttpWebResponse)request.GetResponse())
             {
                 if (response.Headers["Set-Cookie"] != null)
-                    _cookieContainer.SetCookies(new Uri(uri.Scheme + "://" + uri.Host), response.Headers["Set-Cookie"]);
+                    CookieContainer.SetCookies(new Uri(uri.Scheme + "://" + uri.Host), response.Headers["Set-Cookie"]);
 
                 if (!string.IsNullOrEmpty(response.Headers["Location"]))
                 {
-                    request = (HttpWebRequest)WebRequest.Create(uri.Scheme + "://" + uri.Host + "/" + response.Headers["Location"]);
+                    request = (HttpWebRequest) WebRequest.Create(
+                        response.Headers["Location"].ToLowerInvariant().StartsWith("http")
+                            ? response.Headers["Location"]
+                            : uri.Scheme + "://" + uri.Host + "/" + response.Headers["Location"]);
                     request.Referer = uri.ToString();
-                    request.CookieContainer = _cookieContainer;
+                    request.CookieContainer = CookieContainer;
                     request.UserAgent = UserAgent;
                     request.Method = "GET";
                     request.AllowAutoRedirect = true;
                     using (var redirectResponse = (HttpWebResponse)request.GetResponse())
+// ReSharper disable once AssignNullToNotNullAttribute
                     using (var stream = new StreamReader(redirectResponse.GetResponseStream(), new UTF8Encoding()))
                     {
-                        LastResponseContent = stream.ReadToEnd();
+                        LastResponse = new Response
+                        {
+                            Content = stream.ReadToEnd(),
+                            StatusCode = response.StatusCode
+                        };
                         return this;
                     }
                 }
 
+// ReSharper disable once AssignNullToNotNullAttribute
                 using (var stream = new StreamReader(response.GetResponseStream(), new UTF8Encoding()))
                 {
-                    LastResponseContent = stream.ReadToEnd();
+                    LastResponse = new Response
+                    {
+                        Content = stream.ReadToEnd(),
+                        StatusCode = response.StatusCode
+                    };
                     return this;
                 }
             }
@@ -111,10 +128,14 @@ namespace Request0r
         {
             var client = new WebClient();
             client.Headers.Add(HttpRequestHeader.UserAgent, UserAgent);
-            client.Headers.Add(HttpRequestHeader.Cookie, _cookieContainer.GetCookieHeader(new Uri(uri.Scheme + "://" + uri.Host)));
+            client.Headers.Add(HttpRequestHeader.Cookie, CookieContainer.GetCookieHeader(new Uri(uri.Scheme + "://" + uri.Host)));
             client.Headers.Add(HttpRequestHeader.ContentType, "application/x-www-form-urlencoded");
             var responseData = client.UploadValues(uri, form);
-            LastResponseContent = Encoding.ASCII.GetString(responseData);
+            LastResponse = new Response
+            {
+                Content = Encoding.ASCII.GetString(responseData)
+                //,StatusCode = response.StatusCode
+            };
             return this;
         }
     }
